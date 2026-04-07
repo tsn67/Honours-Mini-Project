@@ -1,13 +1,48 @@
 import React from 'react'
+import { useIDEStore } from '../store/useIDEStore'
+import { formatCode, enforceStyle } from '../api/TrainedAgentApi'
 
 const actions = [
-    { label: 'Format Code', icon: '⌥F', desc: 'Prettier-style formatting', isOlama: false },
-    { label: 'Enforce Style', icon: '⌥S', desc: 'Apply coding conventions', isOlama: false },
-    { label: 'Add Boilerplate', icon: '⌥B', desc: 'Component / hook scaffold', isOlama: true },
-    { label: 'Explain Code', icon: '⌥E', desc: 'Line-by-line breakdown', isOlama: true },
+    { label: 'Format Code', icon: '⌥F', desc: 'Prettier-style formatting', key: 'format' },
+    { label: 'Enforce Style', icon: '⌥S', desc: 'Apply coding conventions', key: 'style' },
 ]
 
 const AIPanel: React.FC = () => {
+    const {
+        currentFile,
+        files,
+        updateFile,
+        displayLanguage
+    } = useIDEStore()
+
+    const [loading, setLoading] = React.useState<string | null>(null)
+
+    const handleAction = async (key: string) => {
+        const code = files[currentFile]
+        const language = displayLanguage()
+
+        try {
+            setLoading(key)
+
+            let updatedCode = code
+
+            if (key === 'format') {
+                updatedCode = await formatCode(code, language)
+            }
+
+            if (key === 'style') {
+                updatedCode = await enforceStyle(code)
+            }
+
+            updateFile(currentFile, updatedCode)
+
+        } catch (err) {
+            console.error("AI Error:", err)
+        } finally {
+            setLoading(null)
+        }
+    }
+
     return (
         <div className="w-64 bg-[#1c1c1e] border-l border-[#3a3a3c] flex flex-col overflow-hidden">
             {/* Header */}
@@ -18,16 +53,22 @@ const AIPanel: React.FC = () => {
                 </span>
             </div>
 
-            {/* Action buttons */}
+            {/* Actions */}
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
                 {actions.map((a) => (
                     <button
                         key={a.label}
-                        className={`group w-full text-left rounded-lg ${!a.isOlama ? "bg-[#222239]" : "bg-[#392922]"
-                            } hover:bg-[#3a3a3c] border border-[#3a3a3c] hover:border-[#0a84ff] transition-all px-3 py-2.5`}
+                        onClick={() => handleAction(a.key)}
+                        disabled={loading !== null}
+                        className={`group w-full text-left rounded-lg bg-[#2c2c2e]
+                        hover:bg-[#3a3a3c] border border-[#3a3a3c]
+                        hover:border-[#0a84ff] transition-all px-3 py-2.5
+                        ${loading === a.key ? "opacity-60 cursor-not-allowed" : ""}`}
                     >
                         <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[12px] text-[#e5e5e7] font-medium">{a.label}</span>
+                            <span className="text-[12px] text-[#e5e5e7] font-medium">
+                                {loading === a.key ? "Processing..." : a.label}
+                            </span>
                             <span className="text-[10px] text-[#48484a] font-mono group-hover:text-[#0a84ff] transition-colors">
                                 {a.icon}
                             </span>
@@ -37,7 +78,7 @@ const AIPanel: React.FC = () => {
                 ))}
             </div>
 
-            {/* Chat input stub */}
+            {/* Input */}
             <div className="p-3 border-t border-[#3a3a3c]">
                 <div className="flex items-center gap-2 rounded-lg bg-[#2c2c2e] border border-[#3a3a3c] px-3 py-2">
                     <input
@@ -48,7 +89,7 @@ const AIPanel: React.FC = () => {
                     <span className="text-[#0a84ff] text-[12px]">↵</span>
                 </div>
             </div>
-        </div >
+        </div>
     )
 }
 
