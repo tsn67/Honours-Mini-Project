@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:3000/api";
+import { useIDEStore } from "../store/useIDEStore";
+
+const BASE_URL = "http://localhost:5000/api";
 
 interface RefactorResponse {
     formatted: string;
@@ -9,7 +11,10 @@ interface RefactorResponse {
 }
 
 interface StyleResponse {
-    code: string;
+    result?: {
+        code?: string;
+        changes?: string[];
+    };
 }
 
 // FORMAT CODE (uses /refactor → already includes formatting step)
@@ -24,9 +29,6 @@ export async function formatCode(code: string, language: string) {
 
     const data: RefactorResponse = await res.json();
 
-    // Priority:
-    // 1. AI refactored code
-    // 2. fallback → formatted code
     return data?.result?.code || data.formatted;
 }
 
@@ -49,5 +51,16 @@ export async function enforceStyle(code: string) {
 
     const data: StyleResponse = await res.json();
 
-    return data.code;
+    let outputCode = data.result?.raw
+
+    // Extract code between ```anyword and ```
+    const match = outputCode.match(/```\w+\n([\s\S]*?)\n```/)
+    if (match) {
+        outputCode = match[1]  // Get the captured code content
+    }
+
+    console.log(outputCode);
+
+    console.log(outputCode);
+    return outputCode;
 }

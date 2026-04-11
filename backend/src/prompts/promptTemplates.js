@@ -1,33 +1,32 @@
 function refactorPrompt(code, language) {
-    return `
+  return `
 You are a senior ${language} developer.
 
-Refactor the code:
-- Improve readability
-- Follow best practices
-- Do NOT change functionality
+Task:
+Refactor the given code.
 
-Return JSON:
+Constraints:
+- Preserve exact functionality
+- Improve readability and structure
+- Follow best practices for ${language}
+- Do NOT remove logic
+- Do NOT simplify by replacing code with trivial version
+- Keep code semantically equivalent
+
+Output:
+Return STRICTLY valid JSON.
+
+Schema:
 {
-  "code": "...",
-  "changes": []
+  "code": "refactored code as a single string",
+  "changes": ["list of changes made"]
 }
 
-Code:
-${code}
-`;
-}
-
-function reviewPrompt(code) {
-    return `
-Review this code.
-
-Return JSON:
-{
-  "issues": [],
-  "improvements": [],
-  "summary": ""
-}
+Rules:
+- Escape all double quotes inside code using \\\"
+- Do not include explanations outside JSON
+- Output must start with { and end with }
+- No markdown, no backticks
 
 Code:
 ${code}
@@ -35,19 +34,21 @@ ${code}
 }
 
 function stylePrompt(code, rules) {
-    return `
-Apply these coding rules strictly:
-${JSON.stringify(rules, null, 2)}
+  return `
+    You are a code stylist.
+    give more better verson of this code in the following format
 
-Return ONLY code.
+    // so your output must be (or generated content should have) code only
+    // just the code output
 
-Code:
-${code}
+    here is my code
+
+    // don't say anything else just give me the code
+  ${code}
 `;
 }
 
 module.exports = {
-    refactorPrompt,
-    reviewPrompt,
-    stylePrompt
+  refactorPrompt,
+  stylePrompt
 };

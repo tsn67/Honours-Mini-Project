@@ -1,4 +1,4 @@
-const ollama = require("../services/ollamaService");
+const llm = require("../services/llmService");
 const { formatCode } = require("../utils/formatter");
 const {
     refactorPrompt,
@@ -14,7 +14,7 @@ async function refactor(req, res) {
         const formatted = formatCode(code, language);
         const prompt = refactorPrompt(formatted, language);
 
-        const response = await ollama.generate(prompt);
+        const response = await llm.generate(prompt);
 
         res.json({
             formatted,
@@ -31,7 +31,7 @@ async function review(req, res) {
         const { code } = req.body;
 
         const prompt = reviewPrompt(code);
-        const response = await ollama.generate(prompt);
+        const response = await llm.generate(prompt);
 
         res.json({
             result: safeJSONParse(response)
@@ -47,22 +47,31 @@ async function style(req, res) {
         const { code, rules } = req.body;
 
         const prompt = stylePrompt(code, rules);
-        const response = await ollama.generate(prompt);
+        const response = await llm.generate(prompt);
+        console.log(response)
 
         res.json({
-            code: response
+            result: safeJSONParse(response)
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
 
-// SAFE JSON PARSE (important)
+// SAFE JSON PARSE (handles markdown + invalid JSON)
 function safeJSONParse(text) {
     try {
-        return JSON.parse(text);
-    } catch {
-        return { raw: text };
+        const cleaned = text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+
+        return JSON.parse(cleaned);
+    } catch (e) {
+        return {
+            raw: text,
+            error: "Invalid JSON from model"
+        };
     }
 }
 

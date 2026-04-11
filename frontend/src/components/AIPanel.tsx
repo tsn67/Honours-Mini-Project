@@ -9,10 +9,12 @@ const actions = [
 
 const AIPanel: React.FC = () => {
     const {
+        isLoading,
         currentFile,
         files,
         updateFile,
-        displayLanguage
+        displayLanguage,
+        setIsLoading
     } = useIDEStore()
 
     const [loading, setLoading] = React.useState<string | null>(null)
@@ -23,6 +25,7 @@ const AIPanel: React.FC = () => {
 
         try {
             setLoading(key)
+            setIsLoading(true)
 
             let updatedCode = code
 
@@ -39,6 +42,7 @@ const AIPanel: React.FC = () => {
         } catch (err) {
             console.error("AI Error:", err)
         } finally {
+            setIsLoading(false)
             setLoading(null)
         }
     }
